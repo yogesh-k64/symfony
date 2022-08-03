@@ -288,6 +288,9 @@
             "config/packages/messenger.yaml"
         ]
     },
+    "symfony/webpack-encore-bundle": {
+        "version": "v1.15.1"
+    },
     "twig/extra-bundle": {
         "version": "v3.4.0"
     }

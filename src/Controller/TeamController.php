@@ -48,9 +48,10 @@ class TeamController extends AbstractController
 
         $data = [
             'name' => $team->getName(),
-            'sportId'=> $team->getSportId()
+            'sportId'=> $team->getSportId(),
+            'id'=>$team->getId()
         ];
-
+        dd($data);
         return new JsonResponse($data,Response::HTTP_OK);
     }
 
@@ -61,7 +62,7 @@ class TeamController extends AbstractController
         $allTeam = $this->teamRepository->findAll();
         $data = [];
         foreach ($allTeam as $team) {
-            $data[]=[
+            $data []=[
                 'name' => $team->getName(),
                 'sportId' => $team->getSportId(),
                 'id' => $team->getId()
@@ -82,7 +83,8 @@ class TeamController extends AbstractController
         }
 
         $this->teamRepository->removeTeam($team);
-        return new JsonResponse(['status' => 'Team deleted succesfully',Response::HTTP_NO_CONTENT]);
+        
+        return $this->json(["message"=>"team deleted"],Response::HTTP_OK);
     }
 
     #[Route(path:'/teams/{id}',name:'update_team',methods:['PUT'])]
