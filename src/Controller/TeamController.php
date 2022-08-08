@@ -2,21 +2,34 @@
 
 namespace App\Controller;
 
+use App\Entity\Player;
+use App\Entity\Team;
+use App\Repository\PlayerRepository;
 use App\Repository\TeamRepository;
+use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Serializer\Encoder\JsonEncoder;
+use Symfony\Component\Serializer\Encoder\XmlEncoder;
+use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
+use Symfony\Component\Serializer\Serializer;
 
 class TeamController extends AbstractController
 {
     private $teamRepository;
+    private $playerRepository;
 
-    public function __construct(TeamRepository $teamRepository)
+    public function __construct(TeamRepository $teamRepository,PlayerRepository $playerRepository)
     {
         $this->teamRepository = $teamRepository;
+        $this->playerRepository = $playerRepository;
+
+
     }
 
     #[Route('/teams', name: 'add_team', methods:['POST','HEAD'])]
@@ -51,7 +64,6 @@ class TeamController extends AbstractController
             'sportId'=> $team->getSportId(),
             'id'=>$team->getId()
         ];
-        dd($data);
         return new JsonResponse($data,Response::HTTP_OK);
     }
 
@@ -65,10 +77,10 @@ class TeamController extends AbstractController
             $data []=[
                 'name' => $team->getName(),
                 'sportId' => $team->getSportId(),
-                'id' => $team->getId()
+                'id' => $team->getId(),
+                'players'=>$team->getPlayers()
             ];
         }
-
         return new JsonResponse($data,Response::HTTP_OK);
     }
     
@@ -100,5 +112,48 @@ class TeamController extends AbstractController
         $updatedTeam = $this->teamRepository->updateTeam($team);
         return $this->json($updatedTeam,Response::HTTP_OK);
 
+    }
+    #[Route('/teams/{id}/members', name: 'add_player_to_team', methods: ['POST'])]
+    public function addPlayerToTeam(Team $team, ManagerRegistry $doctrine, Request $request)
+    {
+        $entityManager = $doctrine->getManager();
+
+        $data = json_decode($request->getContent(), true);
+
+        $newPlayer = new Player();
+        $newPlayer->setFirstName($data['firstName'])
+        ->setLastName($data['lastName'])
+        ->setPhoneNumber($data['phoneNumber'])
+        ->addTeam($team);
+
+        $entityManager->persist($newPlayer);
+        $entityManager->flush();
+
+        $results = [
+            'id' => $team->getId(),
+            'name' => $team->getId(),
+            'sportId' => $team->getSportId()
+        ];
+
+        $players = $team->getPlayers()->toArray();
+
+        foreach ($players as $player) {
+            $results['players'][] =
+                [
+                    'firstName' => $player->getFirstName(),
+                    'lastName' => $player->getLastName(),
+                    'phoneNumber' => $player->getPhoneNumber(),
+                ];
+        };
+
+        return $this->json($results, 200);
+    }
+
+    #[Route('/teams/{id}/members',name:'get_all_team_members',methods:['GET'])]
+    public function getAllTeamMembers($id)
+    {
+       $players = $this->teamRepository->getTeamPlayers($id);
+    //    dd($players);
+    //    return $this->json($players,200);
     }
 }

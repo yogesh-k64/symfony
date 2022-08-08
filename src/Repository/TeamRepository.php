@@ -67,7 +67,19 @@ class TeamRepository extends ServiceEntityRepository
         $this->manager->flush(); 
 
         return $team;
-    } 
+    }
+
+    public function getTeamPlayers($id): ?Team
+   {
+       return $this->createQueryBuilder('t')
+           ->innerJoin('t.players','p')
+           ->addSelect('p')
+           ->andWhere('t.id = :id')
+           ->setParameter('id', $id)
+           ->getQuery()
+           ->getOneOrNullResult()
+       ;
+   }
 
 //    /**
 //     * @return Team[] Returns an array of Team objects
